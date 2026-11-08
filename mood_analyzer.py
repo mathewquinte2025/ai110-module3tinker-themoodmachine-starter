@@ -9,9 +9,16 @@ This class starts with very simple logic:
   - Convert that score into a mood label
 """
 
+import re
 from typing import List, Dict, Tuple, Optional
 
 from dataset import POSITIVE_WORDS, NEGATIVE_WORDS
+
+# Words that flip the meaning of the sentiment word right after them.
+NEGATION_WORDS = {
+    "not", "no", "never", "don't", "dont", "isn't", "isnt",
+    "wasn't", "wasnt", "can't", "cant", "didn't", "didnt", "aren't", "arent",
+}
 
 
 class MoodAnalyzer:
@@ -53,9 +60,41 @@ class MoodAnalyzer:
           - Normalize repeated characters ("soooo" -> "soo")
         """
         cleaned = text.strip().lower()
-        tokens = cleaned.split()
+
+        # Keep only runs of letters, digits, and apostrophes. This drops
+        # punctuation like "!", ",", "." so "happy!" becomes "happy",
+        # while contractions like "don't" stay as one token.
+        tokens = re.findall(r"[a-z0-9']+", cleaned)
 
         return tokens
+
+    def _find_hits(self, text: str) -> Tuple[List[str], List[str]]:
+        """
+        Return (positive_hits, negative_hits) for the text.
+
+        Negation: if a sentiment word comes right after a negation word
+        ("not happy", "never fun"), its meaning is flipped. So "not happy"
+        counts as a negative hit and "not bad" counts as a positive hit.
+        """
+        tokens = self.preprocess(text)
+        positive_hits: List[str] = []
+        negative_hits: List[str] = []
+
+        for i, token in enumerate(tokens):
+            negated = i > 0 and tokens[i - 1] in NEGATION_WORDS
+
+            if token in self.positive_words:
+                if negated:
+                    negative_hits.append(f"not {token}")
+                else:
+                    positive_hits.append(token)
+            elif token in self.negative_words:
+                if negated:
+                    positive_hits.append(f"not {token}")
+                else:
+                    negative_hits.append(token)
+
+        return positive_hits, negative_hits
 
     # ---------------------------------------------------------------------
     # Scoring logic
@@ -75,15 +114,10 @@ class MoodAnalyzer:
           - Give some words higher weights than others (for example "hate" < "annoyed")
           - Treat emojis or slang (":)", "lol", "💀") as strong signals
         """
-        # TODO: Implement this method.
-        #   1. Call self.preprocess(text) to get tokens.
-        #   2. Loop over the tokens.
-        #   3. Increase the score for positive words, decrease for negative words.
-        #   4. Return the total score.
-        #
-        # Hint: if you implement negation, you may want to look at pairs of tokens,
-        # like ("not", "happy") or ("never", "fun").
-        pass
+        # Each positive hit is +1, each negative hit is -1.
+        # Negation ("not happy") is handled inside _find_hits.
+        positive_hits, negative_hits = self._find_hits(text)
+        return len(positive_hits) - len(negative_hits)
 
     # ---------------------------------------------------------------------
     # Label prediction
@@ -105,12 +139,18 @@ class MoodAnalyzer:
         Just remember that whatever labels you return should match the labels
         you use in TRUE_LABELS in dataset.py if you care about accuracy.
         """
-        # TODO: Implement this method.
-        #   1. Call self.score_text(text) to get the numeric score.
-        #   2. Return "positive" if the score is above 0.
-        #   3. Return "negative" if the score is below 0.
-        #   4. Return "neutral" otherwise.
-        pass
+        positive_hits, negative_hits = self._find_hits(text)
+
+        # Both kinds of signal present -> the post expresses mixed feelings.
+        if positive_hits and negative_hits:
+            return "mixed"
+
+        score = self.score_text(text)
+        if score > 0:
+            return "positive"
+        if score < 0:
+            return "negative"
+        return "neutral"
 
     # ---------------------------------------------------------------------
     # Explanations (optional but recommended)
@@ -132,19 +172,9 @@ class MoodAnalyzer:
         The current implementation is a placeholder so the code runs even
         before you implement it.
         """
-        tokens = self.preprocess(text)
-
-        positive_hits: List[str] = []
-        negative_hits: List[str] = []
-        score = 0
-
-        for token in tokens:
-            if token in self.positive_words:
-                positive_hits.append(token)
-                score += 1
-            if token in self.negative_words:
-                negative_hits.append(token)
-                score -= 1
+        # Reuse the same logic as score_text so explanations always match.
+        positive_hits, negative_hits = self._find_hits(text)
+        score = len(positive_hits) - len(negative_hits)
 
         return (
             f"Score = {score} "

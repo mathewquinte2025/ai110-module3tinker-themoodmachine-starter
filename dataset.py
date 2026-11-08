@@ -23,6 +23,7 @@ POSITIVE_WORDS = [
     "chill",
     "relaxed",
     "amazing",
+    "proud",      # Part 3 fix: "exhausted but proud" was missed as neutral
 ]
 
 NEGATIVE_WORDS = [
@@ -36,6 +37,7 @@ NEGATIVE_WORDS = [
     "stressed",
     "hate",
     "boring",
+    "exhausted",  # Part 3 fix: pairs with "proud" above
 ]
 
 # ---------------------------------------------------------------------
@@ -50,6 +52,13 @@ SAMPLE_POSTS = [
     "This is fine",
     "So excited for the weekend",
     "I am not happy about this",
+    "Lowkey stressed but kind of proud of myself",
+    "That exam was no cap the best grade I've ever gotten 😂",
+    "I absolutely love getting stuck in traffic for two hours 🙃",
+    "Just got home, making dinner now",
+    "Missing my friends but this new city is growing on me 🥲",
+    "ugh my phone died again :(",
+    "It's whatever, I guess",
 ]
 
 # Human labels for each post above.
@@ -65,6 +74,13 @@ TRUE_LABELS = [
     "neutral",   # "This is fine"
     "positive",  # "So excited for the weekend"
     "negative",  # "I am not happy about this"
+    "mixed",     # "Lowkey stressed but kind of proud of myself"
+    "positive",  # "That exam was no cap the best grade I've ever gotten 😂"
+    "negative",  # "I absolutely love getting stuck in traffic for two hours 🙃" (sarcasm)
+    "neutral",   # "Just got home, making dinner now"
+    "mixed",     # "Missing my friends but this new city is growing on me 🥲"
+    "negative",  # "ugh my phone died again :("
+    "neutral",   # "It's whatever, I guess" (subtle; could read as mildly negative)
 ]
 
 # TODO: Add 5-10 more posts and labels.
